@@ -26,7 +26,7 @@ Alcance: PMI desde el 05/03/2017. No cubre muerte, gran invalidez ni incapacidad
 ## Uso
 
 ```bash
-npm test                   # 54 tests (node:test, sin dependencias)
+npm test                   # 66 tests (node:test, sin dependencias)
 node ejemplo.js            # caso de la sentencia de referencia, con datos sintéticos donde no informa
 ```
 
@@ -44,8 +44,21 @@ const r = liquidar(caso, { ripte, pisos, tasaActivaBNA, tasaBTF });
 | `tasa_activa_bna.json` | 01/2017–09/2026 + TNA vigente | Poder Judicial de Neuquén, contrastada con avisos BNA |
 | `tasa_btf.json` | Macías 01/2017–hoy; Cordero solo vigente | Calculadora del Colegio Público de Abogados de Ushuaia |
 
-Las series se actualizan a mano. Pasada la última fecha cargada, el motor proyecta con la
-última tasa conocida y lo informa en las advertencias.
+### Actualización automática
+
+Un workflow diario (`.github/workflows/actualizar-datos.yml`, 09:17 hora argentina) corre
+`scripts/actualizar-datos.mjs`:
+
+| Serie | Fuente | Control |
+|---|---|---|
+| Tasa activa BNA | Web del BNA (tasa activa cartera general) | La TNA y la TEA publicadas deben ser consistentes entre sí |
+| Tasa BTF (Macías y Cordero) | PDF de tasas activas de Banca Empresas | Una sola fila por tramo; en 181–365 días la TNA vencida debe igualar a la TEA |
+| RIPTE | API de series de datos.gob.ar | Variación mensual entre −20% y +40% |
+| Pisos SRT | Carga manual | Abre un issue 30 días antes del vencimiento |
+
+Si una fuente cambia de formato o no responde, el workflow falla (GitHub avisa por mail) y
+abre un issue con el texto leído. Mientras tanto, la calculadora usa la última tasa cargada
+y marca como estimados los períodos posteriores a la última actualización.
 
 ## Convenciones
 
