@@ -56,14 +56,16 @@ async function cargarDatos() {
 
   const ultimoRipte = Object.keys(ripte.valores).sort().at(-1);
   const pisosHasta = pisos.vigencias.at(-1).hasta;
-  const ultimaBNA = Object.keys(tasaActivaBNA.mensual).sort().at(-1);
+  const bna = tasaActivaBNA.vigencias?.at(-1);
   const macias = tasaBTF.macias.at(-1);
+  const al = [tasaActivaBNA.actualizado, tasaBTF.actualizado].filter(Boolean).sort()[0];
   $('#frescura').innerHTML = [
     `RIPTE hasta <b>${mesCorto(ultimoRipte)}</b>`,
     `Pisos SRT hasta <b>${fecha(pisosHasta)}</b>`,
-    `Tasa activa BNA hasta <b>${mesCorto(ultimaBNA)}</b>`,
+    bna ? `Tasa activa BNA <b>${num(bna.tna * 100)}%</b> desde ${fecha(bna.desde)}` : '',
     `Tasa BTF (Macías) <b>${num(macias.tasa * 100)}%</b> desde ${fecha(macias.desde)}`,
-  ].map((x) => `<span>${x}</span>`).join('');
+    al ? `Tasas verificadas al <b>${fecha(al)}</b>` : '',
+  ].filter(Boolean).map((x) => `<span>${x}</span>`).join('');
 }
 
 /* ------------------------------------------------------------------ */
