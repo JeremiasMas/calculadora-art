@@ -543,9 +543,11 @@ describe('Serie Macías completa (Colegio, 01/01/2017 → 28/09/2026)', () => {
     assert.ok(Math.abs(r.interes - 6_995_110.96) < 0.05, String(r.interes)); // el Colegio redondea por tramo
   });
 
-  test('el perito del caso de referencia ya no necesita estimación', () => {
-    const t = tramosTasaBTF(BTF, { desde: '2026-06-16', hasta: '2027-06-16' });
+  test('el perito del caso de referencia no necesita estimación hasta la última actualización', () => {
+    const t = tramosTasaBTF(BTF, { desde: '2026-06-16', hasta: BTF.actualizado });
     assert.equal(t.advertencias.length, 0);
+    const f = tramosTasaBTF(BTF, { desde: '2026-06-16', hasta: '2027-06-16' });
+    assert.ok(f.advertencias.some((x) => x.includes('estimación')));
   });
 });
 
@@ -564,3 +566,54 @@ describe('Mora: bordes de la capitalización', () => {
     cerca(r.total, 1_000_000 * (1 + 0.365 * d1 / 365) * (1 + 0.365 * d2 / 365));
   });
 });
+
+describe('v0.6 — Detalle de tasas y vigencias diarias', () => {
+  test('mora: el detalle por tramo suma el interés total', () => {
+    const { tramos } = tramosTasaActivaBNA(BNA, '2025-12-31');
+    const r = calcularMora({ capital: 1_000_000, fechaMora: '2025-03-15', fechaPago: '2025-12-31', tasas: tramos });
+    const suma = r.detalleTasas.reduce((s, x) => s + x.interes, 0);
+    cerca(suma, r.interes);
+    assert.equal(r.detalleTasas[0].desde, '2025-03-15');
+    assert.equal(r.detalleTasas.at(-1).hasta, '2025-12-31');
+    assert.equal(r.detalleTasas.reduce((s, x) => s + x.dias, 0), diasEntre('2025-03-15', '2025-12-31') + 1);
+  });
+
+  test('BNA: desde la primera vigencia reemplaza a la serie mensual', () => {
+    const { tramos } = tramosTasaActivaBNA(BNA, '2026-10-15');
+    const primera = BNA.vigencias[0];
+    const antes = tramos.find((x) => x.hasta === diasAnterior(primera.desde));
+    assert.ok(antes, 'el mes se corta el día anterior a la vigencia');
+    const desde = tramos.find((x) => x.desde === primera.desde);
+    assert.equal(desde.tna, primera.tna);
+  });
+
+  test('BNA: pasada la última actualización, advierte estimación', () => {
+    const { advertencias } = tramosTasaActivaBNA(BNA, '2027-12-31');
+    assert.ok(advertencias.some((x) => x.includes('estimación')));
+    const hoy = tramosTasaActivaBNA(BNA, BNA.actualizado);
+    assert.equal(hoy.advertencias.length, 0);
+  });
+});
+
+function diasAnterior(f) {
+  const d = new Date(f + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+describe('Tramos partidos en la fecha de actualización', () => {
+  test('BTF: el tramo real y el estimado quedan separados', () => {
+    const { tramos } = tramosTasaBTF(BTF, { desde: '2026-06-16', hasta: '2027-10-20' });
+    assert.ok(tramos.some((x) => x.hasta === BTF.actualizado));
+    assert.ok(tramos.some((x) => x.desde === diasDespues(BTF.actualizado)));
+    const honorarios = calcularHonorarios({ base: 1e9, peritos: [{ nombre: 'Perito', monto: 1_000_000 }] });
+    const r = calcularInteresesHonorarios(honorarios, { desde: '2026-06-16', hasta: '2027-10-20', tasas: tramos });
+    assert.equal(r.peritos[0].detalleTasas.at(-2).hasta, BTF.actualizado);
+  });
+});
+
+function diasDespues(f) {
+  const d = new Date(f + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}

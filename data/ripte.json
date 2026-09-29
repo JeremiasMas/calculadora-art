@@ -1,6 +1,5 @@
 {
  "fuente": "datos.gob.ar — serie 158.1_REPTE_0_0_5 (RIPTE, pesos corrientes)",
- "obtenido": "2026-09-28",
  "nota": "Contrastada contra la planilla 04/2019–03/2020. Verificar los últimos meses contra la publicación oficial antes de producción.",
  "valores": {
   "2015-01": 11997.96,
@@ -142,5 +141,6 @@
   "2026-05": 1849727.96,
   "2026-06": 1915878.76,
   "2026-07": 1946028.12
- }
+ },
+ "actualizado": "2026-09-28"
 }

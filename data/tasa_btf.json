@@ -5,6 +5,7 @@
   "cordero": "Calculadora del Colegio, opción 'TASA BTF CORDERO T.N.A', corrida del 21/09 al 29/09/2026; coincide con la TNA vencida del tramo 121–180 días de la hoja BTF del 21/09/2026."
  },
  "nota": "Cada vigencia rige desde su fecha hasta el día anterior a la siguiente; la última sigue vigente. La tasa Macías de 46,80% coincide con la hoja BTF del 21/09/2026 (tramo 181–365 días). Cordero solo tiene el dato vigente; faltan las tasas anteriores.",
+ "actualizado": "2026-09-28",
  "macias": [
   {
    "desde": "2017-01-01",

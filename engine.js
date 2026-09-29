@@ -16,7 +16,7 @@
  * Sin dependencias. Funciones puras.
  */
 
-export const VERSION = '0.5.0';
+export const VERSION = '0.6.0';
 
 /** Vigencia de la Ley 27.348 (IBM promedio mensual actualizado por RIPTE). */
 export const REGIMEN_27348 = '2017-03-05';
@@ -455,7 +455,7 @@ export function calcularMora({
   parseFecha(fechaMora);
   parseFecha(fechaPago);
   const fechaFin = diasInclusivos ? sumarDias(fechaPago, 1) : fechaPago;
-  if (fechaFin <= fechaMora) return { capital, interes: 0, total: capital, periodos: [], advertencias: [] };
+  if (fechaFin <= fechaMora) return { capital, interes: 0, total: capital, periodos: [], detalleTasas: [], advertencias: [] };
 
   exigir(Array.isArray(tasas) && tasas.length > 0, 'Faltan las tasas activas para el período de mora.');
   const tramos = tasas
@@ -484,12 +484,16 @@ export function calcularMora({
   let pendiente = 0;
   let inicio = fechaMora;
   const periodos = [];
+  const detalleTasas = [];
   for (let i = 0; i < fechas.length - 1; i++) {
     const a = fechas[i];
     const b = fechas[i + 1];
     const tramo = tramos.find((t) => t.desde <= a && a < t.hastaExcl);
     exigir(tramo, `Falta la tasa activa para el período que comienza el ${a}.`);
-    pendiente += c * tramo.tna * diasEntre(a, b) / baseDias;
+    const dias = diasEntre(a, b);
+    const interesTramo = c * tramo.tna * dias / baseDias;
+    pendiente += interesTramo;
+    detalleTasas.push({ desde: a, hasta: sumarDias(b, -1), dias, tasa: tramo.tna, capital: c, interes: interesTramo });
 
     const capitaliza = fechasCapitalizacion.includes(b);
     if (capitaliza || b === fechaFin) {
@@ -503,7 +507,7 @@ export function calcularMora({
   }
 
   const total = c + pendiente;
-  return { capital, interes: total - capital, total, periodos, advertencias: [] };
+  return { capital, interes: total - capital, total, periodos, detalleTasas, advertencias: [] };
 }
 
 /* ------------------------------------------------------------------ */
@@ -592,6 +596,7 @@ export function calcularInteresesHonorarios(honorarios, { desde, hasta, tasas, i
       total: r.total,
       interesACargoDelCondenado: r.interes * factor,
       totalACargoDelCondenado: r.total * factor,
+      detalleTasas: r.detalleTasas,
     };
   };
 
@@ -611,6 +616,14 @@ function ultimoDiaMes(mes) {
   return fmtFecha(new Date(Date.UTC(y, m, 0)));
 }
 
+/** Parte el tramo que contiene `fecha` en dos: hasta `fecha` inclusive y desde el día siguiente. */
+function partirEn(tramos, fecha) {
+  const i = tramos.findIndex((t) => t.desde <= fecha && fecha < t.hasta);
+  if (i < 0) return tramos;
+  const t = tramos[i];
+  return [...tramos.slice(0, i), { ...t, hasta: fecha }, { ...t, desde: sumarDias(fecha, 1) }, ...tramos.slice(i + 1)];
+}
+
 /** TNA vencida a 30 días → TEA equivalente. */
 export function teaDesdeTna(tna) {
   return (1 + tna * 30 / 365) ** (365 / 30) - 1;
@@ -619,14 +632,16 @@ export function teaDesdeTna(tna) {
 const pct = (x) => String(redondear(x * 100, 2)).replace('.', ',');
 
 /**
- * Serie mensual de tasa activa BNA (interés del mes, en %) → tramos de tasa anual.
- * Con criterio 'tna' cada mes lleva su TNA equivalente (% del mes × 365 / días del mes), así
- * que un mes completo devenga exactamente el % publicado. Con criterio 'tea' esa TNA se
- * convierte a TEA y se aplica como tasa simple, como hace la calculadora del Colegio de
- * Abogados de Ushuaia (criterio STJ TDF, Expte. 2312/2010 SDO).
- * Si `hasta` supera el último mes cargado, proyecta con la TNA vigente y lo advierte.
+ * Serie de tasa activa BNA → tramos de tasa anual.
+ *   - `mensual`: historia en % de interés de cada mes; cada mes lleva su TNA equivalente
+ *     (% del mes × 365 / días del mes), así que un mes completo devenga exactamente ese %.
+ *   - `vigencias`: TNA publicada por el BNA con su fecha de vigencia (la carga el
+ *     actualizador diario). Desde la primera vigencia reemplaza a la serie mensual.
+ * Con criterio 'tea' la TNA se convierte a TEA y se aplica como tasa simple, como hace la
+ * calculadora del Colegio de Abogados de Ushuaia (criterio STJ TDF, Expte. 2312/2010 SDO).
+ * Pasada la fecha `actualizado` de la serie, la última tasa se extiende y se advierte.
  *
- * @param {{mensual:Object<string,number>, vigente?:{tna:number}}} serie  data/tasa_activa_bna.json
+ * @param {{mensual:Object<string,number>, vigencias?:{desde:string, tna:number}[], vigente?:{tna:number}, actualizado?:string}} serie
  * @param {string} [hasta]
  * @param {{criterio?:'tna'|'tea'}} [opciones]
  */
@@ -634,11 +649,21 @@ export function tramosTasaActivaBNA(serie, hasta, { criterio = 'tna' } = {}) {
   exigir(serie?.mensual && Object.keys(serie.mensual).length > 0, 'Falta la serie de tasa activa BNA.');
   exigir(['tna', 'tea'].includes(criterio), `Criterio de tasa inválido: ${criterio}`);
   const anual = (tna) => (criterio === 'tea' ? teaDesdeTna(tna) : tna);
+  const vig = [...(serie.vigencias ?? [])].sort((a, b) => (a.desde < b.desde ? -1 : 1));
+  const corte = vig[0]?.desde;
 
-  const tramos = Object.keys(serie.mensual).sort().map((mes) => {
-    const fin = ultimoDiaMes(mes);
-    const dias = Number(fin.slice(8));
-    return { desde: `${mes}-01`, hasta: fin, tna: anual((serie.mensual[mes] / 100) * 365 / dias) };
+  const tramos = [];
+  for (const mes of Object.keys(serie.mensual).sort()) {
+    const desde = `${mes}-01`;
+    if (corte && desde >= corte) break;
+    const finMes = ultimoDiaMes(mes);
+    const dias = Number(finMes.slice(8));
+    const fin = corte && finMes >= corte ? sumarDias(corte, -1) : finMes;
+    tramos.push({ desde, hasta: fin, tna: anual((serie.mensual[mes] / 100) * 365 / dias) });
+  }
+  vig.forEach((v, i) => {
+    const fin = i < vig.length - 1 ? sumarDias(vig[i + 1].desde, -1) : (hasta && hasta > v.desde ? hasta : v.desde);
+    tramos.push({ desde: v.desde, hasta: fin, tna: anual(v.tna) });
   });
 
   const advertencias = [];
@@ -648,13 +673,16 @@ export function tramosTasaActivaBNA(serie, hasta, { criterio = 'tna' } = {}) {
     );
   }
   const ultimo = tramos[tramos.length - 1].hasta;
-  if (hasta && hasta > ultimo) {
+  if (!vig.length && hasta && hasta > ultimo) {
     exigir(serie.vigente?.tna > 0, 'No hay TNA vigente para proyectar la tasa activa.');
     const inicio = sumarDias(ultimo, 1);
     tramos.push({ desde: inicio, hasta, tna: anual(serie.vigente.tna) });
+    advertencias.push(`Tasa activa BNA proyectada desde ${inicio} con la TNA vigente (${pct(serie.vigente.tna)}%): el resultado es una estimación.`);
+  } else if (vig.length && hasta && serie.actualizado && hasta > serie.actualizado) {
     advertencias.push(
-      `Tasa activa BNA proyectada desde ${inicio} con la TNA vigente (${pct(serie.vigente.tna)}%): el resultado es una estimación.`,
+      `Tasa activa BNA: después del ${serie.actualizado} se aplica la última TNA publicada (${pct(vig.at(-1).tna)}%). El tramo posterior es una estimación.`,
     );
+    return { tramos: partirEn(tramos, serie.actualizado), advertencias };
   }
   return { tramos, advertencias };
 }
@@ -689,11 +717,16 @@ export function tramosTasaBTF(serie, { desde, hasta, variante = 'macias', comple
   }));
 
   const advertencias = [];
+  if (serie.actualizado && hasta > serie.actualizado) {
+    advertencias.push(
+      `Tasa BTF (${variante}): después del ${serie.actualizado} se aplica la última tasa publicada (${pct(vig.at(-1).tasa)}%). El tramo posterior es una estimación.`,
+    );
+  }
   if (desde < vig[0].desde && completarConVigente) {
     tramos.unshift({ desde, hasta: sumarDias(vig[0].desde, -1), tna: vig[0].tasa });
     advertencias.push(`No hay tasa BTF (${variante}) anterior al ${vig[0].desde}: se aplicó la primera conocida desde ${desde}. Es una estimación.`);
   }
-  return { tramos, advertencias };
+  return { tramos: serie.actualizado && hasta > serie.actualizado ? partirEn(tramos, serie.actualizado) : tramos, advertencias };
 }
 
 /* ------------------------------------------------------------------ */

@@ -1,4 +1,5 @@
 import { liquidar, sumarMeses } from './engine.js';
+import { armarLiquidacion } from './liquidacion.js';
 
 /* ------------------------------------------------------------------ */
 /* Utilidades de formato y lectura                                     */
@@ -204,13 +205,17 @@ const FRANJAS = {
 
 const fila = (dt, dd, fuerte = false) => `<div class="${fuerte ? 'fuerte' : ''}"><dt>${dt}</dt><dd>${dd}</dd></div>`;
 let ultimoTexto = '';
+let ultimo = null;
+let documento = null;
 
 function renderVacio(faltan) {
+  ultimo = null;
   res.innerHTML = `<h2>Resultado</h2><p class="vacio">Faltan: ${faltan.map(esc).join(', ')}.</p>`;
   $('#barra').hidden = true;
 }
 
 function renderError(mensaje) {
+  ultimo = null;
   let m = mensaje;
   if (/Falta el RIPTE de/.test(m)) m += ' Todavía no está publicado o está fuera de la serie cargada.';
   res.innerHTML = `<h2>Resultado</h2><div class="aviso err">${esc(m)}</div>`;
@@ -303,13 +308,14 @@ function render(r, caso) {
   }
 
   partes.push(`<div class="acciones-res">
-    <button type="button" class="primario" id="btn-copiar">Copiar resumen</button>
-    <button type="button" id="btn-imprimir">Imprimir</button>
+    <button type="button" class="primario" id="btn-liq">Liquidación para el escrito</button>
+    <button type="button" id="btn-copiar">Copiar resumen</button>
   </div>`);
 
   res.innerHTML = partes.join('');
   $('#btn-copiar').addEventListener('click', copiar);
-  $('#btn-imprimir').addEventListener('click', () => window.print());
+  $('#btn-liq').addEventListener('click', abrirLiquidacion);
+  ultimo = { r, caso };
 
   ultimoTexto = [
     'Liquidación LRT — metodología STJ Tierra del Fuego',
@@ -339,6 +345,56 @@ async function copiar() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Liquidación en limpio                                               */
+/* ------------------------------------------------------------------ */
+
+function abrirLiquidacion() {
+  if (!ultimo) return;
+  documento = armarLiquidacion(ultimo.r, ultimo.caso, DATOS, { autos: valor('autos') });
+  $('#liq-doc').innerHTML = documento.html;
+  const aviso = $('#liq-aviso');
+  aviso.hidden = !documento.estimada;
+  aviso.textContent = documento.estimada
+    ? 'Incluye tasas estimadas (marcadas con *): el período excede la última tasa publicada. Revisalo antes de presentarlo.'
+    : '';
+  $('#dlg-liq').showModal();
+}
+
+async function copiarLiquidacion() {
+  const btn = $('#btn-copiar-liq');
+  try {
+    if (window.ClipboardItem && navigator.clipboard?.write) {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([documento.html], { type: 'text/html' }),
+        'text/plain': new Blob([documento.texto], { type: 'text/plain' }),
+      })]);
+    } else {
+      await navigator.clipboard.writeText(documento.texto);
+    }
+    btn.textContent = 'Copiado';
+  } catch {
+    btn.textContent = 'No se pudo copiar';
+  }
+  setTimeout(() => { btn.textContent = 'Copiar con formato'; }, 1800);
+}
+
+function descargarLiquidacion() {
+  const doc = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Liquidación</title></head><body>${documento.html}</body></html>`;
+  const url = URL.createObjectURL(new Blob(['\ufeff', doc], { type: 'application/msword' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `liquidacion-art-${ultimo.caso.fechaLiquidacion}.doc`;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+$('#btn-copiar-liq').addEventListener('click', copiarLiquidacion);
+$('#btn-descargar-liq').addEventListener('click', descargarLiquidacion);
+$('#btn-cerrar').addEventListener('click', () => $('#dlg-liq').close());
+
+/* ------------------------------------------------------------------ */
 /* Cálculo                                                             */
 /* ------------------------------------------------------------------ */
 
@@ -364,6 +420,7 @@ function programar() {
 /* ------------------------------------------------------------------ */
 
 const EJEMPLO = {
+  autos: 'V., M. E. c/ Provincia ART S.A. s/ apelación art. 46 Ley 24.557',
   lesiones: [{ descripcion: 'Limitación funcional', porcentaje: '5', habil: true }],
   fAct: '10', fRec: '0', fEdad: '0,5',
   nacimiento: '1965-03-10', pmi: '2019-05-22', liquidacion: '2026-09-28',
@@ -381,7 +438,7 @@ function cargarEjemplo() {
   aplicarModo();
   $('#lesiones').innerHTML = '';
   EJEMPLO.lesiones.forEach(agregarLesion);
-  for (const k of ['fAct', 'fRec', 'fEdad', 'nacimiento', 'pmi', 'liquidacion', 'moraDesde', 'moraHasta', 'perito', 'peritoDesde', 'peritoHasta']) {
+  for (const k of ['autos', 'fAct', 'fRec', 'fEdad', 'nacimiento', 'pmi', 'liquidacion', 'moraDesde', 'moraHasta', 'perito', 'peritoDesde', 'peritoHasta']) {
     campo(k).value = EJEMPLO[k];
   }
   sueldosGuardados.clear();

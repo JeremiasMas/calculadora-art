@@ -149,6 +149,18 @@ dl.filas div.fuerte dt, dl.filas div.fuerte dd { color: var(--ink); font-weight:
 .barra .etq { font-size: 12px; color: var(--muted); }
 .barra .v { font-family: var(--serif); font-weight: 600; font-size: 20px; font-variant-numeric: tabular-nums; }
 
+dialog#dlg-liq {
+  width: min(860px, 100vw); max-width: 100vw; max-height: 92vh; padding: 0;
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); color: var(--ink);
+}
+dialog#dlg-liq::backdrop { background: rgb(0 0 0 / .45); }
+@media (max-width: 600px) { dialog#dlg-liq { max-height: 100vh; height: 100vh; border-radius: 0; margin: 0; } }
+.dlg-cab { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px 6px; font-family: var(--serif); font-size: 18px; }
+.dlg-acciones { display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 16px 12px; border-bottom: 1px solid var(--line); }
+#liq-aviso { margin: 4px 16px 0; }
+.papel { background: #fff; color: #000; margin: 16px; padding: 24px 22px; border-radius: 4px; box-shadow: 0 1px 4px rgb(0 0 0 / .15); overflow-x: auto; }
+@media (max-width: 600px) { .papel { margin: 10px; padding: 16px 12px; } }
+
 footer { border-top: 1px solid var(--line); padding: 18px 0 40px; font-size: 13px; color: var(--muted); }
 footer p { max-width: 80ch; }
 
@@ -208,6 +220,7 @@ footer p { max-width: 80ch; }
     <section class="bloque">
       <h2><span class="num">2</span>Trabajador y fechas</h2>
       <p class="ayuda">PMI: primera manifestación invalidante.</p>
+      <label class="campo" style="margin-bottom:12px"><span class="t">Autos (opcional)</span><input name="autos" placeholder="Carátula del expediente, para la liquidación en limpio"></label>
       <div class="grid">
         <label class="campo"><span class="t">Fecha de nacimiento</span><input type="date" name="nacimiento"></label>
         <label class="campo"><span class="t">Fecha de la PMI</span><input type="date" name="pmi"></label>
@@ -275,6 +288,19 @@ footer p { max-width: 80ch; }
   <div><div class="etq">Total a la liquidación</div><div class="v" id="barra-total">—</div></div>
   <button type="button" class="primario" id="btn-ver">Ver detalle</button>
 </div>
+
+<dialog id="dlg-liq" aria-label="Liquidación para el escrito">
+  <div class="dlg-cab">
+    <strong>Liquidación para el escrito</strong>
+    <button type="button" class="link" id="btn-cerrar">Cerrar</button>
+  </div>
+  <div id="liq-aviso" class="aviso warn" hidden></div>
+  <div class="dlg-acciones">
+    <button type="button" class="primario" id="btn-copiar-liq">Copiar con formato</button>
+    <button type="button" id="btn-descargar-liq">Descargar para Word</button>
+  </div>
+  <div class="papel" id="liq-doc"></div>
+</dialog>
 
 <footer>
   <div class="wrap">
