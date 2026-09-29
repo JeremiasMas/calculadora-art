@@ -1,0 +1,156 @@
+{
+ "tasa": "Banco de Tierra del Fuego — descuento de documentos en pesos (criterios Macías y Cordero del STJ TDF), tasa anual aplicada como interés simple",
+ "fuente": {
+  "macias": "Calculadora del Colegio Público de Abogados de Ushuaia (sistemadeliquidaciones.cpau.com.ar), opción 'Activa Descuento de documentos en Pesos D/180 días (BTF) - Macías', liquidación del 01/01/2017 al 28/09/2026 (35 tramos).",
+  "cordero": "Calculadora del Colegio, opción 'TASA BTF CORDERO T.N.A', corrida del 21/09 al 29/09/2026; coincide con la TNA vencida del tramo 121–180 días de la hoja BTF del 21/09/2026."
+ },
+ "nota": "Cada vigencia rige desde su fecha hasta el día anterior a la siguiente; la última sigue vigente. La tasa Macías de 46,80% coincide con la hoja BTF del 21/09/2026 (tramo 181–365 días). Cordero solo tiene el dato vigente; faltan las tasas anteriores.",
+ "macias": [
+  {
+   "desde": "2017-01-01",
+   "tasa": 0.325
+  },
+  {
+   "desde": "2017-06-27",
+   "tasa": 0.2871
+  },
+  {
+   "desde": "2018-01-29",
+   "tasa": 0.3061
+  },
+  {
+   "desde": "2018-04-23",
+   "tasa": 0.2498
+  },
+  {
+   "desde": "2018-07-23",
+   "tasa": 0.3189
+  },
+  {
+   "desde": "2018-09-05",
+   "tasa": 0.4538
+  },
+  {
+   "desde": "2018-10-19",
+   "tasa": 0.4823
+  },
+  {
+   "desde": "2019-07-16",
+   "tasa": 0.5259
+  },
+  {
+   "desde": "2019-08-20",
+   "tasa": 0.8615
+  },
+  {
+   "desde": "2020-02-01",
+   "tasa": 0.5707
+  },
+  {
+   "desde": "2020-03-02",
+   "tasa": 0.419
+  },
+  {
+   "desde": "2020-07-02",
+   "tasa": 0.3189
+  },
+  {
+   "desde": "2020-11-03",
+   "tasa": 0.4823
+  },
+  {
+   "desde": "2020-11-04",
+   "tasa": 0.5019
+  },
+  {
+   "desde": "2021-10-01",
+   "tasa": 0.6667
+  },
+  {
+   "desde": "2022-03-04",
+   "tasa": 0.7498
+  },
+  {
+   "desde": "2022-04-22",
+   "tasa": 0.9019
+  },
+  {
+   "desde": "2022-08-23",
+   "tasa": 1.1519
+  },
+  {
+   "desde": "2023-05-22",
+   "tasa": 2.8153
+  },
+  {
+   "desde": "2023-08-17",
+   "tasa": 3.6919
+  },
+  {
+   "desde": "2023-10-26",
+   "tasa": 1.381
+  },
+  {
+   "desde": "2024-03-22",
+   "tasa": 1.1
+  },
+  {
+   "desde": "2024-05-13",
+   "tasa": 0.95
+  },
+  {
+   "desde": "2024-05-16",
+   "tasa": 0.87
+  },
+  {
+   "desde": "2024-07-01",
+   "tasa": 0.4355
+  },
+  {
+   "desde": "2025-08-04",
+   "tasa": 0.505
+  },
+  {
+   "desde": "2025-08-12",
+   "tasa": 0.585
+  },
+  {
+   "desde": "2025-09-01",
+   "tasa": 0.7
+  },
+  {
+   "desde": "2025-09-03",
+   "tasa": 0.8
+  },
+  {
+   "desde": "2025-09-09",
+   "tasa": 0.9
+  },
+  {
+   "desde": "2025-09-12",
+   "tasa": 0.9
+  },
+  {
+   "desde": "2025-11-13",
+   "tasa": 0.8
+  },
+  {
+   "desde": "2025-11-27",
+   "tasa": 0.7
+  },
+  {
+   "desde": "2026-01-05",
+   "tasa": 0.38
+  },
+  {
+   "desde": "2026-02-09",
+   "tasa": 0.468
+  }
+ ],
+ "cordero": [
+  {
+   "desde": "2026-09-21",
+   "tasa": 0.4232
+  }
+ ]
+}
