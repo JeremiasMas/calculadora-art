@@ -4,6 +4,7 @@
   "description": "Motor de cálculo de prestaciones dinerarias LRT (arts. 14.2, 15.2 y 11.4) con metodología STJ Tierra del Fuego",
   "type": "module",
   "main": "engine.js",
+  "license": "MIT",
   "scripts": {
     "test": "node --test test/*.test.js",
     "ejemplo": "node ejemplo.js"

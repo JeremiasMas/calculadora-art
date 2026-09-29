@@ -56,6 +56,10 @@ Las series se actualizan a mano. Pasada la última fecha cargada, el motor proye
   Colegio, criterio STJ Expte. 2312/2010). Con capitalización semestral, la TEA compone dos veces.
 - Cordero: falta la serie histórica y la capitalización a la notificación de la demanda.
 
+## Licencia
+
+MIT. Ver `LICENSE`.
+
 ## Aviso
 
 Herramienta orientativa. No es asesoramiento jurídico ni reemplaza la liquidación aprobada en
