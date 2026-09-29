@@ -5,7 +5,7 @@
   "cordero": "Calculadora del Colegio Público de Abogados de Ushuaia, opción 'TASA BTF CORDERO T.N.A', liquidación del 01/01/2017 al 29/09/2026 (30 tramos). El último tramo coincide con la T.N.A.V. 121–180 de la hoja BTF del 21/09/2026."
  },
  "nota": "El BTF publica el producto como 'Negociación de valores – Cheques físicos' (antes 'descuento de documentos'). Macías = T.E.A.V. de esa sección; Cordero = T.N.A.V. del plazo 121–180. Ambos coinciden con la calculadora del Colegio de Abogados de Ushuaia al 28/09/2026. Interés simple, base 365, días inclusivos. El actualizador diario agrega una vigencia cuando cambia la tasa.",
- "actualizado": "2026-09-28",
+ "actualizado": "2026-09-29",
  "macias": [
   {
    "desde": "2017-01-01",
