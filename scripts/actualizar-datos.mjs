@@ -52,27 +52,33 @@ const fechaISO = (d, m, y) => `${y}-${String(m).padStart(2, '0')}-${String(d).pa
 export const teaDesdeTna = (tna) => (1 + tna * 30 / 365) ** (365 / 30) - 1;
 
 /**
- * Busca en la web del BNA la tasa activa de cartera general.
- * Acepta el bloque solo si la TNA (vencida a 30 días) y la TEA publicadas son consistentes.
+ * Busca en la web del BNA la tasa activa de cartera general. Formato publicado:
+ *   "Tasa Activa Cartera General Diversas vigente desde el 29/9/2026
+ *    Tasa Efectiva Mensual Vencida = T.E.M. (30 días) = 2,219%
+ *    Tasa Nominal Anual Vencida con capitalización cada 30 días = T.N.A. (30 días) = 27,00%
+ *    Tasa Efectiva Anual Vencida = T.E.A. = 30,61%"
+ * Exige que TEM, TNA y TEA sean consistentes entre sí.
  * @returns {{desde:string, tna:number, tea:number}}
  */
 export function parsearBNA(html) {
   const texto = textoPlano(html);
-  const re = /cartera general/gi;
-  const descartes = [];
-  let m;
-  while ((m = re.exec(texto))) {
-    const ventana = texto.slice(Math.max(0, m.index - 200), m.index + 900);
-    const f = ventana.match(/vigente\s+desde\s+el\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
-    const pcts = [...ventana.slice(ventana.search(/cartera general/i)).matchAll(/(\d{1,3}(?:[.,]\d{1,3})?)\s*%/g)].map((x) => porcentaje(x[1]));
-    if (!f || pcts.length < 2) { descartes.push('sin fecha o sin dos porcentajes'); continue; }
-    const [a, b] = pcts;
-    const tna = Math.min(a, b);
-    const tea = Math.max(a, b);
-    if (Math.abs(teaDesdeTna(tna) - tea) > 0.005) { descartes.push(`TNA ${a} y TEA ${b} inconsistentes`); continue; }
-    return { desde: fechaISO(f[1], f[2], f[3]), tna, tea };
+  const i = texto.search(/tasa activa cartera general/i);
+  if (i < 0) throw new Error('BNA: no se encontró "Tasa Activa Cartera General".');
+  const bloque = texto.slice(i, i + 700);
+  const f = bloque.match(/vigente\s+desde\s+el\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
+  const valor = (sigla) => {
+    const m = bloque.match(new RegExp(`${sigla}\\s*(?:\\([^)]*\\))?\\s*=\\s*(\\d{1,3}(?:[.,]\\d{1,4})?)\\s*%`));
+    return m ? porcentaje(m[1]) : null;
+  };
+  const tna = valor('T\\.N\\.A\\.');
+  const tea = valor('T\\.E\\.A\\.');
+  const tem = valor('T\\.E\\.M\\.');
+  if (!f || tna == null || tea == null) {
+    throw new Error(`BNA: faltan datos en el bloque (fecha ${f ? 'ok' : 'no'}, T.N.A. ${tna ?? 'no'}, T.E.A. ${tea ?? 'no'}).`);
   }
-  throw new Error(`BNA: no se encontró un bloque válido de tasa activa cartera general (${descartes.join('; ') || 'sin coincidencias'}).`);
+  if (Math.abs(teaDesdeTna(tna) - tea) > 0.005) throw new Error(`BNA: T.N.A. ${tna} y T.E.A. ${tea} inconsistentes.`);
+  if (tem != null && Math.abs(tna * 30 / 365 - tem) > 0.0005) throw new Error(`BNA: T.N.A. ${tna} y T.E.M. ${tem} inconsistentes.`);
+  return { desde: fechaISO(f[1], f[2], f[3]), tna, tea };
 }
 
 /** Link al PDF de tasas activas de Banca Empresas en la página del BTF. */
@@ -88,10 +94,16 @@ export function buscarPdfBTF(html, base = FUENTES.btf) {
  * @returns {{desde:string, macias:number, cordero:number}}
  */
 export function parsearBTF(texto) {
-  const f = texto.match(/vigente\s+a\s+partir\s+del?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
+  const f = texto.match(/vigente\s+a\s+partir\s+del?\s*[\s\S]{0,400}?(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
   if (!f) throw new Error('BTF: no se encontró la fecha "Vigente a partir del".');
   const fila = (desde, hasta) => {
-    const lineas = texto.split('\n').filter((l) => new RegExp(`^\\s*${desde}\\s+${hasta}\\b`).test(l));
+    const todas = texto.split('\n');
+    let lineas = todas.filter((l) => new RegExp(`(^|\\s)${desde}\\s+${hasta}(\\s|$)`).test(l) && (l.match(/%/g) || []).length >= 3);
+    if (lineas.length > 1) {
+      // Varias líneas con el mismo plazo: se usan las de la sección de descuento de documentos.
+      const inicio = todas.findIndex((l) => /descuento\s+de\s+documentos/i.test(l));
+      if (inicio >= 0) lineas = lineas.filter((l) => todas.indexOf(l) > inicio);
+    }
     if (lineas.length !== 1) throw new Error(`BTF: se esperaba una fila ${desde}–${hasta} y hay ${lineas.length}.`);
     const pcts = [...lineas[0].matchAll(/(\d{1,3}(?:,\d{1,3})?)\s*%/g)].map((x) => porcentaje(x[1]));
     if (pcts.length < 3) throw new Error(`BTF: la fila ${desde}–${hasta} no tiene tres tasas: "${lineas[0].trim()}".`);
@@ -142,6 +154,7 @@ const DATA = new URL('../data/', import.meta.url);
 const leer = (f) => JSON.parse(readFileSync(new URL(f, DATA), 'utf8'));
 const guardar = (f, obj) => writeFileSync(new URL(f, DATA), `${JSON.stringify(obj, null, 1)}\n`);
 const hoyART = () => new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10);
+const sumarDiasISO = (f, n) => new Date(Date.parse(`${f}T00:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
 
 async function traer(url, tipo = 'text') {
   const r = await fetch(url, {
@@ -162,11 +175,11 @@ async function actualizarBNA(hoy, log) {
     throw e;
   }
   validarTasa('BNA', dato.tna);
-  if (dato.desde > hoy) throw new Error(`BNA: fecha de vigencia futura (${dato.desde}).`);
+  if (dato.desde > sumarDiasISO(hoy, 7)) throw new Error(`BNA: fecha de vigencia demasiado lejana (${dato.desde}).`);
   const serie = leer('tasa_activa_bna.json');
   const { lista, cambio } = aplicarVigencia(serie.vigencias ?? [], dato.desde, 'tna', dato.tna);
   serie.vigencias = lista.map((v) => ({ fuente: 'bna.com.ar', ...v }));
-  serie.actualizado = hoy;
+  serie.actualizado = dato.desde > hoy ? dato.desde : hoy;
   guardar('tasa_activa_bna.json', serie);
   log(`BNA: TNA ${(dato.tna * 100).toFixed(2)}% (TEA ${(dato.tea * 100).toFixed(2)}%) vigente desde ${dato.desde}${cambio ? ` — ${cambio}` : ' — sin cambios'}.`);
 }
@@ -182,18 +195,23 @@ async function actualizarBTF(hoy, log) {
   try {
     dato = parsearBTF(texto);
   } catch (e) {
-    e.muestra = `${url}\n\n${texto.slice(0, 2500)}`;
+    const lineas = texto.split('\n');
+    const interes = new Set();
+    lineas.forEach((l, k) => {
+      if (/descuento|vigente|\b(121|181)\b/i.test(l)) for (let j = Math.max(0, k - 3); j <= Math.min(lineas.length - 1, k + 3); j++) interes.add(j);
+    });
+    e.muestra = `${url}\n\n${[...interes].sort((x, y) => x - y).map((k) => lineas[k]).join('\n')}`;
     throw e;
   }
   validarTasa('BTF Macías', dato.macias);
   validarTasa('BTF Cordero', dato.cordero);
-  if (dato.desde > hoy) throw new Error(`BTF: fecha de vigencia futura (${dato.desde}).`);
+  if (dato.desde > sumarDiasISO(hoy, 7)) throw new Error(`BTF: fecha de vigencia demasiado lejana (${dato.desde}).`);
   const serie = leer('tasa_btf.json');
   const m = aplicarVigencia(serie.macias, dato.desde, 'tasa', dato.macias);
   const c = aplicarVigencia(serie.cordero, dato.desde, 'tasa', dato.cordero);
   serie.macias = m.lista;
   serie.cordero = c.lista;
-  serie.actualizado = hoy;
+  serie.actualizado = dato.desde > hoy ? dato.desde : hoy;
   guardar('tasa_btf.json', serie);
   log(`BTF (${url.split('/').pop()}): Macías ${(dato.macias * 100).toFixed(2)}%, Cordero ${(dato.cordero * 100).toFixed(2)}%, vigente desde ${dato.desde}${m.cambio || c.cambio ? ` — ${[m.cambio && `Macías ${m.cambio}`, c.cambio && `Cordero ${c.cambio}`].filter(Boolean).join('; ')}` : ' — sin cambios'}.`);
 }
