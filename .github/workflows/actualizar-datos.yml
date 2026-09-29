@@ -1,0 +1,65 @@
+name: Actualizar datos
+
+on:
+  schedule:
+    - cron: '17 12 * * *' # todos los días, 09:17 hora argentina
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pages: write
+
+concurrency:
+  group: actualizar-datos
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar pdftotext
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+
+      - name: Actualizar series
+        id: actualizar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/actualizar-datos.mjs
+
+      - name: Tests
+        run: npm test
+
+      - name: Guardar cambios
+        id: guardar
+        run: |
+          if git diff --quiet -- data/; then
+            echo "Sin cambios en los datos."
+            echo "cambios=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "Datos: actualización automática $(TZ=America/Argentina/Buenos_Aires date +%F)"
+          git push
+          echo "cambios=1" >> "$GITHUB_OUTPUT"
+
+      - name: Publicar la página
+        if: steps.guardar.outputs.cambios == '1'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds"
+
+      - name: Fallar si alguna fuente no se pudo leer
+        if: steps.actualizar.outputs.errores != '0'
+        run: |
+          echo "::error::${{ steps.actualizar.outputs.errores }} fuente(s) con error. Detalle en el resumen y en el issue del repositorio."
+          exit 1
