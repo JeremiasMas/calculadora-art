@@ -459,7 +459,7 @@ describe('Tasa activa BNA (serie mensual)', () => {
 
   test('después del último mes proyecta con la TNA vigente y lo advierte', () => {
     const { tramos, advertencias } = tramosTasaActivaBNA(BNA, '2027-12-31');
-    assert.equal(tramos[tramos.length - 1].tna, 0.264);
+    assert.equal(tramos[tramos.length - 1].tna, BNA.vigencias.at(-1).tna);
     assert.ok(advertencias[0].includes('estimación'));
   });
 
@@ -481,9 +481,9 @@ describe('Tasa activa BNA (serie mensual)', () => {
 describe('Tasa BTF (Macías)', () => {
   test('Macías por defecto (46,80%); Cordero a pedido (42,32%)', () => {
     const m = tramosTasaBTF(BTF, { desde: '2026-10-01', hasta: '2027-01-01' });
-    assert.equal(m.tramos.at(-1).tna, 0.468);
+    assert.equal(m.tramos.at(-1).tna, BTF.macias.at(-1).tasa);
     const c = tramosTasaBTF(BTF, { desde: '2026-10-01', hasta: '2027-01-01', variante: 'cordero' });
-    assert.equal(c.tramos.at(-1).tna, 0.4232);
+    assert.equal(c.tramos.at(-1).tna, BTF.cordero.at(-1).tasa);
   });
 
   test('antes de la primera vigencia: falla salvo que se pida completar', () => {
@@ -491,9 +491,9 @@ describe('Tasa BTF (Macías)', () => {
     // Cordero solo tiene dato desde el 21/09/2026
     const sin = tramosTasaBTF(BTF, { desde: '2026-06-16', hasta: '2027-06-16', variante: 'cordero' });
     assert.throws(() => calcularInteresesHonorarios(honorarios, { desde: '2026-06-16', hasta: '2027-06-16', tasas: sin.tramos }), ErrorCalculo);
-    const con = tramosTasaBTF(BTF, { desde: '2026-06-16', hasta: '2027-06-16', variante: 'cordero', completarConVigente: true });
-    const r = calcularInteresesHonorarios(honorarios, { desde: '2026-06-16', hasta: '2027-06-16', tasas: con.tramos });
-    cerca(r.peritos[0].interes, 1_021_220 * 0.4232 * (diasEntre('2026-06-16', '2027-06-16') + 1) / 365);
+    const con = tramosTasaBTF(BTF, { desde: '2026-06-16', hasta: '2026-09-28', variante: 'cordero', completarConVigente: true });
+    const r = calcularInteresesHonorarios(honorarios, { desde: '2026-06-16', hasta: '2026-09-28', tasas: con.tramos });
+    cerca(r.peritos[0].interes, 1_021_220 * BTF.cordero[0].tasa * (diasEntre('2026-06-16', '2026-09-28') + 1) / 365);
     assert.ok(con.advertencias.some((a) => a.includes('estimación')));
   });
 });

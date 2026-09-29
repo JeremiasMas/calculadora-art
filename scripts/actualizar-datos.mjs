@@ -195,12 +195,8 @@ async function actualizarBTF(hoy, log) {
   try {
     dato = parsearBTF(texto);
   } catch (e) {
-    const lineas = texto.split('\n');
-    const interes = new Set();
-    lineas.forEach((l, k) => {
-      if (/descuento|vigente|\b(121|181)\b/i.test(l)) for (let j = Math.max(0, k - 3); j <= Math.min(lineas.length - 1, k + 3); j++) interes.add(j);
-    });
-    e.muestra = `${url}\n\n${[...interes].sort((x, y) => x - y).map((k) => lineas[k]).join('\n')}`;
+    const compacto = texto.split('\n').map((l) => l.trim().replace(/\s{2,}/g, ' | ')).filter(Boolean).join('\n');
+    e.muestra = `${url}\n\n${compacto}`;
     throw e;
   }
   validarTasa('BTF Macías', dato.macias);
@@ -283,7 +279,7 @@ async function main() {
   if (errores.length) {
     const cuerpo = [
       `Fecha: ${hoy}`,
-      ...errores.map((e) => `### ${e.nombre}\n\n${e.mensaje}${e.muestra ? `\n\n<details><summary>Texto leído</summary>\n\n\`\`\`\n${e.muestra.slice(0, 3500)}\n\`\`\`\n</details>` : ''}`),
+      ...errores.map((e) => `### ${e.nombre}\n\n${e.mensaje}${e.muestra ? `\n\n<details><summary>Texto leído</summary>\n\n\`\`\`\n${e.muestra.slice(0, 30000)}\n\`\`\`\n</details>` : ''}`),
       'Mientras no se resuelva, la calculadora usa la última tasa cargada y marca como estimados los períodos posteriores.',
     ].join('\n\n');
     await issue('Actualizador de datos: error al leer una fuente', cuerpo);
