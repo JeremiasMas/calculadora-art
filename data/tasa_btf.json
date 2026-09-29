@@ -4,7 +4,7 @@
   "macias": "Calculadora del Colegio Público de Abogados de Ushuaia (sistemadeliquidaciones.cpau.com.ar), opción 'Activa Descuento de documentos en Pesos D/180 días (BTF) - Macías', liquidación del 01/01/2017 al 28/09/2026 (35 tramos).",
   "cordero": "Calculadora del Colegio, opción 'TASA BTF CORDERO T.N.A', corrida del 21/09 al 29/09/2026; coincide con la TNA vencida del tramo 121–180 días de la hoja BTF del 21/09/2026."
  },
- "nota": "Cada vigencia rige desde su fecha hasta el día anterior a la siguiente; la última sigue vigente. La tasa Macías de 46,80% coincide con la hoja BTF del 21/09/2026 (tramo 181–365 días). Cordero solo tiene el dato vigente; faltan las tasas anteriores.",
+ "nota": "El BTF publica el producto como 'Negociación de valores – Cheques físicos' (antes 'descuento de documentos'). Macías = T.E.A.V. de esa sección; Cordero = T.N.A.V. del plazo 121–180. Ambos coinciden con la calculadora del Colegio de Abogados de Ushuaia al 28/09/2026. Interés simple, base 365, días inclusivos. El actualizador diario agrega una vigencia cuando cambia la tasa.",
  "actualizado": "2026-09-28",
  "macias": [
   {

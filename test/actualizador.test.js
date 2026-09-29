@@ -56,46 +56,56 @@ describe('BNA', () => {
 describe('BTF', () => {
   const pagina = `<a href="/wp-content/uploads/2026/09/c3939-tasas-activas-consumo-20260918.pdf">Consumo</a>
     <a href="https://www.btf.com.ar/wp-content/uploads/2026/09/c3939-tasas-activas-comercial-20260918.pdf">Empresas</a>`;
+  // Extracto real del PDF del 21/09/2026 (pdftotext -layout).
   const pdf = `
-                         LÍNEAS DE CRÉDITO COMERCIAL
-                              Vigente a partir del 21/09/2026
-      Plazo (en días)             T.N.A.A.    T.N.A.V.    T.E.A.V.
-      Desde   Hasta
-        1      30        -        37,78%      39,01%      46,80%
-       31      60        -        37,19%      39,64%      46,80%
-      121     180        -        34,93%      42,32%      46,80%
-      181     365        -        31,88%      46,80%      46,80%
-  `;
+                          TASAS DE INTERÉS PARA OPERACIONES ACTIVAS BANCA EMPRESAS
+   Vigente a partir del
+                                                                          LÍNEAS DE CRÉDITO COMERCIAL
+       21/09/2026
+NEGOCIACIÓN DE VALORES                                                                                  T.N.A.A.   T.N.A.V.   T.E.A.V.
+                                                                CHEQUES FÍSICOS
+                                                                     1        30                    -                37,78%     39,01%     46,80%
+                                                                    31        60                    -                37,19%     39,64%     46,80%
+HASTA 180 DÍAS (6)                                                  61        90                    -                36,61%     40,29%     46,80% FIJA ADELANTADA
+                                                                    91       120                    -                36,04%     40,95%     46,80%
+                                                                    121      180                    -                34,93%     42,32%     46,80%
+                                                                CHEQUES ELECTRÓNICOS
+                                                                     1        30                    -                36,12%     37,24%     44,30%
+                                                                    121      180                    -                33,51%     40,25%     44,30%
+                                                               OPERACIONES DE FACTORING
+                                                                    121      180                    -                34,93%     42,32%     46,80%
+                                                                    181      365                    -                31,88%     46,80%     46,80%
+`;
 
   test('encuentra el PDF de Banca Empresas', () => {
     assert.equal(buscarPdfBTF(pagina), 'https://www.btf.com.ar/wp-content/uploads/2026/09/c3939-tasas-activas-comercial-20260918.pdf');
   });
 
-  test('lee Macías (TEA 181–365) y Cordero (TNA vencida 121–180)', () => {
-    assert.deepEqual(parsearBTF(pdf), { desde: '2026-09-21', macias: 0.468, cordero: 0.4232 });
+  test('lee Macías (T.E.A.V.) y Cordero (T.N.A.V. 121–180) de cheques físicos', () => {
+    assert.deepEqual(parsearBTF(pdf), { desde: '2026-09-21', macias: 0.468, cordero: 0.4232, seccion: 'CHEQUES FÍSICOS' });
   });
 
-  test('fecha en otra línea y filas con descripción a la izquierda', () => {
-    const real = `   TASAS DE INTERÉS PARA OPERACIONES ACTIVAS BANCA EMPRESAS
-   Vigente a partir del
-                                          LÍNEAS DE CRÉDITO COMERCIAL
-       21/09/2026
-DESCUENTO DE DOCUMENTOS EN PESOS        121     180     -     34,93%     42,32%     46,80%
-                                        181     365     -     31,88%     46,80%     46,80%`;
-    assert.deepEqual(parsearBTF(real), { desde: '2026-09-21', macias: 0.468, cordero: 0.4232 });
+  test('prefiere la sección "Descuento de documentos" si existe', () => {
+    const con = pdf.replace('NEGOCIACIÓN DE VALORES', `DESCUENTO DE DOCUMENTOS
+      1   30   -   30,00%   31,00%   36,00%
+     31   60   -   29,50%   31,20%   36,00%
+    121  180   -   28,00%   33,02%   36,00%
+NEGOCIACIÓN DE VALORES`);
+    const r = parsearBTF(con);
+    assert.equal(r.seccion, 'DESCUENTO DE DOCUMENTOS');
+    assert.equal(r.macias, 0.36);
   });
 
-  test('con filas repetidas, usa la sección de descuento de documentos', () => {
-    const doble = `Vigente a partir del 21/09/2026
-PRÉSTAMOS         181   365   -   40,00%   50,00%   50,00%
-DESCUENTO DE DOCUMENTOS
-                  121   180   -   34,93%   42,32%   46,80%
-                  181   365   -   31,88%   46,80%   46,80%`;
-    assert.deepEqual(parsearBTF(doble), { desde: '2026-09-21', macias: 0.468, cordero: 0.4232 });
+  test('falla si la T.E.A.V. no es única en la sección', () => {
+    assert.throws(() => parsearBTF(pdf.replace('39,64%     46,80%', '39,64%     47,50%')), /no es única/);
   });
 
-  test('falla si la fila 181–365 aparece dos veces', () => {
-    assert.throws(() => parsearBTF(`${pdf}\n  181  365  -  30,00%  44,00%  44,00%`), /hay 2/);
+  test('falla si la T.N.A.V. 121–180 no reproduce la T.E.A.V.', () => {
+    assert.throws(() => parsearBTF(pdf.replace('42,32%     46,80%', '38,00%     46,80%')), /no reproduce/);
+  });
+
+  test('falla si no hay sección reconocible', () => {
+    assert.throws(() => parsearBTF('Vigente a partir del 21/09/2026\nPRÉSTAMOS 1 30 - 10,00% 11,00% 12,00%'), /sección/);
   });
 });
 

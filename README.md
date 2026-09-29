@@ -26,7 +26,7 @@ Alcance: PMI desde el 05/03/2017. No cubre muerte, gran invalidez ni incapacidad
 ## Uso
 
 ```bash
-npm test                   # 69 tests (node:test, sin dependencias)
+npm test                   # 70 tests (node:test, sin dependencias)
 node ejemplo.js            # caso de la sentencia de referencia, con datos sintéticos donde no informa
 ```
 
@@ -52,7 +52,7 @@ Un workflow diario (`.github/workflows/actualizar-datos.yml`, 09:17 hora argenti
 | Serie | Fuente | Control |
 |---|---|---|
 | Tasa activa BNA | Web del BNA (tasa activa cartera general) | La TNA y la TEA publicadas deben ser consistentes entre sí |
-| Tasa BTF (Macías y Cordero) | PDF de tasas activas de Banca Empresas | Una sola fila por tramo; en 181–365 días la TNA vencida debe igualar a la TEA |
+| Tasa BTF (Macías y Cordero) | PDF de tasas activas de Banca Empresas, sección "Negociación de valores – Cheques físicos" (antes "descuento de documentos") | TEA única en la sección; la TNA vencida 121–180 debe reproducir esa TEA |
 | RIPTE | API de series de datos.gob.ar | Variación mensual entre −20% y +40% |
 | Pisos SRT | Carga manual | Abre un issue 30 días antes del vencimiento |
 

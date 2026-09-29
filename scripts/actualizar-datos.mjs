@@ -90,29 +90,47 @@ export function buscarPdfBTF(html, base = FUENTES.btf) {
 
 /**
  * Texto del PDF del BTF (pdftotext -layout) → tasas.
- * Filas esperadas: "181 365 - 31,88% 46,80% 46,80%" (TNA adelantada, TNA vencida, TEA).
- * @returns {{desde:string, macias:number, cordero:number}}
+ *
+ * El BTF ya no publica una sección llamada "descuento de documentos": el producto equivalente
+ * es "Negociación de valores – Cheques físicos" (T.N.A.A., T.N.A.V., T.E.A.V., plazos 1–180).
+ * Se usa esa sección, o la de "Descuento de documentos" si vuelve a aparecer.
+ *   Macías  = T.E.A.V. de la sección (constante en todos los plazos; 46,80% al 21/09/2026).
+ *   Cordero = T.N.A.V. del plazo 121–180 (42,32% al 21/09/2026).
+ * Ambos valores coinciden con la calculadora del Colegio de Abogados de Ushuaia.
+ * @returns {{desde:string, macias:number, cordero:number, seccion:string}}
  */
 export function parsearBTF(texto) {
   const f = texto.match(/vigente\s+a\s+partir\s+del?\s*[\s\S]{0,400}?(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
   if (!f) throw new Error('BTF: no se encontró la fecha "Vigente a partir del".');
-  const fila = (desde, hasta) => {
-    const todas = texto.split('\n');
-    let lineas = todas.filter((l) => new RegExp(`(^|\\s)${desde}\\s+${hasta}(\\s|$)`).test(l) && (l.match(/%/g) || []).length >= 3);
-    if (lineas.length > 1) {
-      // Varias líneas con el mismo plazo: se usan las de la sección de descuento de documentos.
-      const inicio = todas.findIndex((l) => /descuento\s+de\s+documentos/i.test(l));
-      if (inicio >= 0) lineas = lineas.filter((l) => todas.indexOf(l) > inicio);
-    }
-    if (lineas.length !== 1) throw new Error(`BTF: se esperaba una fila ${desde}–${hasta} y hay ${lineas.length}.`);
-    const pcts = [...lineas[0].matchAll(/(\d{1,3}(?:,\d{1,3})?)\s*%/g)].map((x) => porcentaje(x[1]));
-    if (pcts.length < 3) throw new Error(`BTF: la fila ${desde}–${hasta} no tiene tres tasas: "${lineas[0].trim()}".`);
-    return pcts.slice(-3); // [TNA adelantada, TNA vencida, TEA]
-  };
-  const [, tnavLargo, teaLargo] = fila(181, 365);
-  const [, tnavMedio] = fila(121, 180);
-  if (Math.abs(tnavLargo - teaLargo) > 0.001) throw new Error(`BTF: en 181–365 la TNA vencida (${tnavLargo}) debería igualar a la TEA (${teaLargo}).`);
-  return { desde: fechaISO(f[1], f[2], f[3]), macias: teaLargo, cordero: tnavMedio };
+
+  const lineas = texto.split('\n');
+  const titulos = [/descuento\s+de\s+documentos/i, /cheques\s+f[íi]sicos/i];
+  let inicio = -1;
+  let seccion = '';
+  for (const t of titulos) {
+    inicio = lineas.findIndex((l) => t.test(l));
+    if (inicio >= 0) { seccion = lineas[inicio].trim(); break; }
+  }
+  if (inicio < 0) throw new Error('BTF: no se encontró la sección "Descuento de documentos" ni "Cheques físicos".');
+
+  const fila = /(?:^|\s)(\d{1,3})\s+(\d{1,3})\s+-\s+(\d{1,3},\d{1,4})\s*%\s+(\d{1,3},\d{1,4})\s*%\s+(\d{1,3},\d{1,4})\s*%/;
+  const esTitulo = (l) => /^\s*[A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ .,/()-]{4,}\s*$/.test(l) && !/\d/.test(l);
+  const filas = [];
+  for (let k = inicio + 1; k < lineas.length; k++) {
+    if (esTitulo(lineas[k])) break;
+    const m = lineas[k].match(fila);
+    if (m) filas.push({ desde: Number(m[1]), hasta: Number(m[2]), tnaa: porcentaje(m[3]), tnav: porcentaje(m[4]), tea: porcentaje(m[5]) });
+  }
+  if (filas.length < 3) throw new Error(`BTF: la sección "${seccion}" tiene ${filas.length} filas de tasas.`);
+  const teas = new Set(filas.map((x) => x.tea));
+  if (teas.size !== 1) throw new Error(`BTF: la T.E.A.V. no es única en "${seccion}" (${[...teas].join(', ')}).`);
+  const macias = filas[0].tea;
+  const f180 = filas.find((x) => x.desde === 121 && x.hasta === 180);
+  if (!f180) throw new Error(`BTF: no hay fila 121–180 en "${seccion}".`);
+  const cordero = f180.tnav;
+  const teaImplicita = (1 + cordero * 180 / 365) ** (365 / 180) - 1;
+  if (Math.abs(teaImplicita - macias) > 0.005) throw new Error(`BTF: la T.N.A.V. 121–180 (${cordero}) no reproduce la T.E.A.V. (${macias}).`);
+  return { desde: fechaISO(f[1], f[2], f[3]), macias, cordero, seccion };
 }
 
 /** CSV de la API de series → { 'YYYY-MM': valor } */
@@ -209,7 +227,7 @@ async function actualizarBTF(hoy, log) {
   serie.cordero = c.lista;
   serie.actualizado = dato.desde > hoy ? dato.desde : hoy;
   guardar('tasa_btf.json', serie);
-  log(`BTF (${url.split('/').pop()}): Macías ${(dato.macias * 100).toFixed(2)}%, Cordero ${(dato.cordero * 100).toFixed(2)}%, vigente desde ${dato.desde}${m.cambio || c.cambio ? ` — ${[m.cambio && `Macías ${m.cambio}`, c.cambio && `Cordero ${c.cambio}`].filter(Boolean).join('; ')}` : ' — sin cambios'}.`);
+  log(`BTF (${url.split('/').pop()}, sección "${dato.seccion}"): Macías ${(dato.macias * 100).toFixed(2)}%, Cordero ${(dato.cordero * 100).toFixed(2)}%, vigente desde ${dato.desde}${m.cambio || c.cambio ? ` — ${[m.cambio && `Macías ${m.cambio}`, c.cambio && `Cordero ${c.cambio}`].filter(Boolean).join('; ')}` : ' — sin cambios'}.`);
 }
 
 async function actualizarRIPTE(hoy, log) {
