@@ -421,33 +421,25 @@ function programar() {
 /* Ejemplo, limpieza y eventos                                         */
 /* ------------------------------------------------------------------ */
 
+/** Caso ficticio: no corresponde a ningún expediente. */
 const EJEMPLO = {
-  autos: 'V., M. E. c/ Provincia ART S.A. s/ apelación art. 46 Ley 24.557',
-  lesiones: [{ descripcion: 'Limitación funcional', porcentaje: '5', habil: true }],
-  fAct: '10', fRec: '0', fEdad: '0,5',
-  nacimiento: '1965-03-10', pmi: '2019-05-22', liquidacion: '2026-09-28',
+  incapacidad: '12',
+  nacimiento: '1984-07-02',
+  pmi: '2025-03-10',
   sueldos: {
-    '2018-05': 48000, '2018-06': 48000, '2018-07': 50000, '2018-08': 50000, '2018-09': 50000, '2018-10': 53000,
-    '2018-11': 53000, '2018-12': 53000, '2019-01': 56000, '2019-02': 56000, '2019-03': 58000, '2019-04': 58000,
+    '2024-03': 950000, '2024-04': 980000, '2024-05': 1010000, '2024-06': 1040000, '2024-07': 1070000, '2024-08': 1100000,
+    '2024-09': 1130000, '2024-10': 1160000, '2024-11': 1190000, '2024-12': 1220000, '2025-01': 1250000, '2025-02': 1280000,
   },
-  moraDesde: '2026-10-20', moraHasta: '2027-10-20',
-  perito: '1.021.220', peritoDesde: '2026-06-16', peritoHasta: '2027-10-20',
 };
 
 function cargarEjemplo() {
   limpiar(false);
-  form.elements.modo.value = 'baremo';
+  form.elements.modo.value = 'directo';
   aplicarModo();
-  $('#lesiones').innerHTML = '';
-  EJEMPLO.lesiones.forEach(agregarLesion);
-  for (const k of ['autos', 'fAct', 'fRec', 'fEdad', 'nacimiento', 'pmi', 'liquidacion', 'moraDesde', 'moraHasta', 'perito', 'peritoDesde', 'peritoHasta']) {
-    campo(k).value = EJEMPLO[k];
-  }
+  for (const k of ['incapacidad', 'nacimiento', 'pmi']) campo(k).value = EJEMPLO[k];
   sueldosGuardados.clear();
   for (const [m, v] of Object.entries(EJEMPLO.sueldos)) sueldosGuardados.set(m, v.toLocaleString('es-AR'));
   dibujarSueldos();
-  $('#bloque-mora').open = true;
-  $('#bloque-hon').open = true;
   calcular();
 }
 

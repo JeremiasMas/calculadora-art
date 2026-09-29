@@ -27,7 +27,7 @@ Alcance: PMI desde el 05/03/2017. No cubre muerte, gran invalidez ni incapacidad
 
 ```bash
 npm test                   # 70 tests (node:test, sin dependencias)
-node ejemplo.js            # caso de la sentencia de referencia, con datos sintéticos donde no informa
+node ejemplo.js            # caso ficticio
 ```
 
 ```js
