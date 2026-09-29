@@ -54,16 +54,19 @@ async function cargarDatos() {
   );
   DATOS = { ripte, pisos, tasaActivaBNA, tasaBTF };
 
-  const ultimoRipte = Object.keys(ripte.valores).sort().at(-1);
+  const meses = (o) => Object.keys(o).sort();
+  const mmaaaa = (iso) => `${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+  const ripteMeses = meses(ripte.valores);
   const pisosHasta = pisos.vigencias.at(-1).hasta;
   const bna = tasaActivaBNA.vigencias?.at(-1);
+  const bnaDesde = meses(tasaActivaBNA.mensual)[0];
   const macias = tasaBTF.macias.at(-1);
   const al = [tasaActivaBNA.actualizado, tasaBTF.actualizado].filter(Boolean).sort()[0];
   $('#frescura').innerHTML = [
-    `RIPTE hasta <b>${mesCorto(ultimoRipte)}</b>`,
-    `Pisos SRT hasta <b>${fecha(pisosHasta)}</b>`,
-    bna ? `Tasa activa BNA <b>${num(bna.tna * 100)}%</b> desde ${fecha(bna.desde)}` : '',
-    `Tasa BTF (Macías) <b>${num(macias.tasa * 100)}%</b> desde ${fecha(macias.desde)}`,
+    `RIPTE: serie <b>${mmaaaa(ripteMeses[0])} – ${mmaaaa(ripteMeses.at(-1))}</b>`,
+    `Pisos SRT: hasta <b>${fecha(pisosHasta)}</b>`,
+    bna ? `Tasa activa BNA: serie desde <b>${mmaaaa(bnaDesde)}</b> · vigente <b>${num(bna.tna * 100)}%</b> (desde ${fecha(bna.desde)})` : '',
+    `Tasa BTF (Macías): serie desde <b>${mmaaaa(tasaBTF.macias[0].desde)}</b> · vigente <b>${num(macias.tasa * 100)}%</b> (desde ${fecha(macias.desde)})`,
     al ? `Tasas verificadas al <b>${fecha(al)}</b>` : '',
   ].filter(Boolean).map((x) => `<span>${x}</span>`).join('');
 }
