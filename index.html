@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora ART — Tierra del Fuego</title>
+<meta name="description" content="Liquidación de prestaciones dinerarias por incapacidad laboral (LRT) con la metodología del STJ de Tierra del Fuego. Cálculo en el navegador, sin envío de datos.">
+<meta name="color-scheme" content="light dark">
+<style>
+:root {
+  --paper: #f6f4ee;
+  --card: #fffdf8;
+  --ink: #1c2230;
+  --muted: #5d6573;
+  --line: #dcd6c8;
+  --accent: #7b2d26;
+  --accent-soft: #f3e4df;
+  --focus: #1f5a6b;
+  --warn-bg: #fbf1d9;
+  --warn-ink: #6e4b00;
+  --err-bg: #fbe8e5;
+  --err-ink: #93291c;
+  --ok-ink: #1f5a3b;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #13161c;
+    --card: #1a1e26;
+    --ink: #e9e5db;
+    --muted: #a2a9b6;
+    --line: #2d333e;
+    --accent: #e0937f;
+    --accent-soft: #33221f;
+    --focus: #7cc3d4;
+    --warn-bg: #33291a;
+    --warn-ink: #f0cf8a;
+    --err-bg: #3a1f1c;
+    --err-ink: #f2a497;
+    --ok-ink: #8fd3ad;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.5 var(--sans);
+}
+a { color: var(--accent); }
+.wrap { max-width: 1140px; margin: 0 auto; padding: 0 16px; }
+
+header.top { padding: 28px 0 8px; border-bottom: 1px solid var(--line); }
+.kicker { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(26px, 5vw, 38px); line-height: 1.15; margin: 0 0 10px; }
+.lead { color: var(--muted); max-width: 70ch; margin: 0 0 14px; }
+@media (max-width: 480px) { .lead { font-size: 15px; } .kicker { font-size: 11px; } }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); padding-bottom: 16px; }
+.meta b { color: var(--ink); font-weight: 600; }
+
+main { display: grid; gap: 24px; padding: 24px 0 120px; }
+@media (min-width: 960px) {
+  main { grid-template-columns: minmax(0, 1fr) 420px; align-items: start; }
+  #resultados { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
+  .barra { display: none !important; }
+}
+
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+button {
+  font: inherit; font-size: 14px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  padding: 8px 14px; border-radius: 999px;
+}
+button.primario { background: var(--accent); border-color: var(--accent); color: var(--card); }
+button.link { border: 0; background: none; padding: 4px 0; color: var(--accent); text-decoration: underline; border-radius: 0; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+section.bloque, details.bloque {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px 16px; margin-bottom: 16px;
+}
+.bloque h2, details.bloque summary {
+  font-family: var(--serif); font-size: 20px; font-weight: 600; margin: 0 0 4px;
+}
+details.bloque summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0; }
+details.bloque summary::-webkit-details-marker { display: none; }
+details.bloque summary::after { content: "+"; font-family: var(--sans); color: var(--muted); font-size: 22px; line-height: 1; }
+details.bloque[open] summary::after { content: "–"; }
+details.bloque[open] summary { margin-bottom: 4px; }
+.num { color: var(--accent); margin-right: 6px; }
+.ayuda { color: var(--muted); font-size: 14px; margin: 0 0 14px; }
+
+.grid { display: grid; gap: 12px 14px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+label.campo { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+label.campo span.t { font-weight: 600; color: var(--ink); font-size: 14px; }
+input, select {
+  font: inherit; font-size: 16px; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; width: 100%; min-width: 0;
+}
+input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+label.check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin-bottom: 14px; }
+.seg label { padding: 7px 14px; font-size: 14px; cursor: pointer; }
+.seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.seg label:has(input:checked) { background: var(--accent); color: var(--card); }
+
+.lesion { display: grid; grid-template-columns: 1fr 90px auto auto; gap: 8px; align-items: end; margin-bottom: 8px; }
+@media (max-width: 480px) { .lesion { grid-template-columns: 1fr 80px; } .lesion .check, .lesion .quitar { grid-column: auto; } }
+.quitar { padding: 6px 10px; }
+
+.sueldos { display: grid; gap: 8px 12px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.sueldos label.campo span.t { font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* Resultados */
+#resultados { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 16px; }
+#resultados h2 { font-family: var(--serif); font-size: 22px; margin: 0 0 12px; }
+.total { border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 12px; }
+.total .etq { font-size: 13px; color: var(--muted); }
+.total .monto { font-family: var(--serif); font-size: clamp(28px, 6vw, 34px); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.total .sub { font-size: 13px; color: var(--muted); }
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.kpi { background: var(--paper); border-radius: 8px; padding: 8px 10px; }
+.kpi .etq { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.kpi .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+.paso { margin: 14px 0 6px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+dl.filas { margin: 0; }
+dl.filas div { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px dashed var(--line); font-size: 14px; }
+dl.filas dt { color: var(--muted); }
+dl.filas dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+dl.filas div.fuerte dt, dl.filas div.fuerte dd { color: var(--ink); font-weight: 700; }
+.aviso { border-radius: 8px; padding: 10px 12px; font-size: 14px; margin: 12px 0 0; }
+.aviso.warn { background: var(--warn-bg); color: var(--warn-ink); }
+.aviso.err { background: var(--err-bg); color: var(--err-ink); }
+.aviso ul { margin: 6px 0 0; padding-left: 18px; }
+.vacio { color: var(--muted); font-size: 15px; }
+.acciones-res { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+
+.barra {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  background: var(--card); border-top: 1px solid var(--line);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+}
+.barra .etq { font-size: 12px; color: var(--muted); }
+.barra .v { font-family: var(--serif); font-weight: 600; font-size: 20px; font-variant-numeric: tabular-nums; }
+
+footer { border-top: 1px solid var(--line); padding: 18px 0 40px; font-size: 13px; color: var(--muted); }
+footer p { max-width: 80ch; }
+
+@media print {
+  body { background: #fff; color: #000; }
+  header.top .meta, form, .acciones, .acciones-res, .barra, footer { display: none !important; }
+  main { display: block; padding: 0; }
+  #resultados { border: 0; position: static; max-height: none; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <p class="kicker">Ley 24.557 · Ley 26.773 · STJ Tierra del Fuego</p>
+    <h1>Calculadora de accidentes de trabajo</h1>
+    <p class="lead">Liquida la prestación dineraria por incapacidad permanente con la metodología del Superior Tribunal de Justicia de Tierra del Fuego: IBM actualizado por RIPTE, actualización hasta la liquidación, interés puro del 6% y mora con tasa activa. El cálculo se hace en tu navegador; ningún dato se envía.</p>
+    <div class="meta" id="frescura" aria-live="polite">Cargando datos…</div>
+  </div>
+</header>
+
+<div class="wrap">
+<main>
+  <form id="form" novalidate autocomplete="off">
+    <div class="acciones">
+      <button type="button" id="btn-ejemplo">Cargar caso de ejemplo</button>
+      <button type="button" id="btn-limpiar">Limpiar</button>
+    </div>
+
+    <section class="bloque">
+      <h2><span class="num">1</span>Incapacidad</h2>
+      <p class="ayuda">Porcentaje fijado por la pericia o la Comisión Médica, o cálculo con el Baremo (Dto. 659/96).</p>
+      <div class="seg" role="radiogroup" aria-label="Modo de incapacidad">
+        <label><input type="radio" name="modo" value="directo" checked>Porcentaje</label>
+        <label><input type="radio" name="modo" value="baremo">Baremo</label>
+      </div>
+      <div id="modo-directo" class="grid">
+        <label class="campo"><span class="t">Incapacidad (%)</span><input name="incapacidad" inputmode="decimal" placeholder="5,80"></label>
+      </div>
+      <div id="modo-baremo" hidden>
+        <div id="lesiones"></div>
+        <button type="button" class="link" id="btn-lesion">+ Agregar lesión</button>
+        <div class="grid" style="margin-top:12px">
+          <label class="campo"><span class="t">Preexistencia (%)</span><input name="preexistencia" inputmode="decimal" placeholder="0"></label>
+          <label class="campo"><span class="t">Actividad (%)</span><input name="fAct" inputmode="decimal" placeholder="10"></label>
+          <label class="campo"><span class="t">Recalificación (%)</span><input name="fRec" inputmode="decimal" placeholder="0"></label>
+          <label class="campo"><span class="t">Edad (%)</span><input name="fEdad" inputmode="decimal" placeholder="0,5"></label>
+        </div>
+        <p class="ayuda" style="margin-top:8px">Los factores de ponderación se aplican como porcentaje del subtotal físico, no como puntos sumados.</p>
+      </div>
+      <div class="grid" style="margin-top:12px">
+        <label class="campo"><span class="t">Incapacidad ya indemnizada (%)</span><input name="pagada" inputmode="decimal" placeholder="0"></label>
+      </div>
+      <label class="check" style="margin-top:12px"><input type="checkbox" name="itinere">Accidente in itinere (sin adicional del 20%)</label>
+    </section>
+
+    <section class="bloque">
+      <h2><span class="num">2</span>Trabajador y fechas</h2>
+      <div class="grid">
+        <label class="campo"><span class="t">Fecha de nacimiento</span><input type="date" name="nacimiento"></label>
+        <label class="campo"><span class="t">Primera manifestación invalidante</span><input type="date" name="pmi"></label>
+        <label class="campo"><span class="t">Fecha de liquidación</span><input type="date" name="liquidacion"></label>
+      </div>
+    </section>
+
+    <section class="bloque">
+      <h2><span class="num">3</span>Remuneraciones</h2>
+      <p class="ayuda" id="ayuda-sueldos">Cargá la PMI para ver los doce meses anteriores. Usá la remuneración bruta mensual informada por ARCA.</p>
+      <div class="sueldos" id="sueldos"></div>
+      <button type="button" class="link" id="btn-repetir" hidden>Repetir el primer sueldo en todos los meses</button>
+    </section>
+
+    <details class="bloque" id="bloque-mora">
+      <summary><span><span class="num">4</span>Mora</span></summary>
+      <p class="ayuda">Desde el vencimiento del plazo de pago de la liquidación firme. Tasa activa BNA con capitalización semestral (art. 12.3 LRT, art. 770 CCyC).</p>
+      <div class="grid">
+        <label class="campo"><span class="t">Inicio de la mora</span><input type="date" name="moraDesde"></label>
+        <label class="campo"><span class="t">Fecha de pago</span><input type="date" name="moraHasta"></label>
+        <label class="campo"><span class="t">Tasa</span>
+          <select name="criterio">
+            <option value="tna">Nominal anual (texto de la sentencia)</option>
+            <option value="tea">Efectiva anual (calculadora del Colegio)</option>
+          </select>
+        </label>
+      </div>
+    </details>
+
+    <details class="bloque" id="bloque-hon">
+      <summary><span><span class="num">5</span>Honorarios</span></summary>
+      <p class="ayuda">Sobre el total a la fecha de liquidación, con el tope del art. 730 CCyCN. Valores iniciales de la sentencia de referencia.</p>
+      <div class="grid">
+        <label class="campo"><span class="t">Letrado actora (%)</span><input name="hAct" inputmode="decimal" value="17"></label>
+        <label class="campo"><span class="t">Recargo apoderado (%)</span><input name="hActRec" inputmode="decimal" value="40"></label>
+        <label class="campo"><span class="t">Letrado demandada (%)</span><input name="hDem" inputmode="decimal" value="7"></label>
+        <label class="campo"><span class="t">Recargo apoderado (%)</span><input name="hDemRec" inputmode="decimal" value="40"></label>
+        <label class="campo"><span class="t">Perito ($)</span><input name="perito" inputmode="decimal" placeholder="0"></label>
+        <label class="campo"><span class="t">Regulación del perito</span><input type="date" name="peritoDesde"></label>
+        <label class="campo"><span class="t">Intereses del perito hasta</span><input type="date" name="peritoHasta"></label>
+      </div>
+      <p class="ayuda" style="margin-top:8px">Intereses del perito: criterio "Macías" del STJ (tasa BTF de descuento de documentos, interés simple).</p>
+    </details>
+
+    <details class="bloque" id="bloque-partes">
+      <summary><span><span class="num">6</span>Liquidaciones de las partes</span></summary>
+      <p class="ayuda">Para comparar contra el total a la fecha de liquidación.</p>
+      <div class="grid">
+        <label class="campo"><span class="t">Actora ($)</span><input name="liqAct" inputmode="decimal"></label>
+        <label class="campo"><span class="t">Demandada ($)</span><input name="liqDem" inputmode="decimal"></label>
+      </div>
+    </details>
+  </form>
+
+  <aside id="resultados" aria-live="polite" aria-label="Resultado">
+    <h2>Resultado</h2>
+    <p class="vacio">Completá incapacidad, fechas y remuneraciones.</p>
+  </aside>
+</main>
+</div>
+
+<div class="barra" id="barra" hidden>
+  <div><div class="etq">Total a la liquidación</div><div class="v" id="barra-total">—</div></div>
+  <button type="button" class="primario" id="btn-ver">Ver detalle</button>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p><b>Herramienta orientativa.</b> No es asesoramiento jurídico ni reemplaza la liquidación aprobada en el expediente. Alcance: PMI desde el 05/03/2017; no cubre muerte, gran invalidez ni incapacidades provisorias.</p>
+    <p>Metodología, fuentes de datos y código: <a href="https://github.com/JeremiasMas/calculadora-art">github.com/JeremiasMas/calculadora-art</a> (licencia MIT).</p>
+  </div>
+</footer>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

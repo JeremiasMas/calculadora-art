@@ -548,3 +548,19 @@ describe('Serie Macías completa (Colegio, 01/01/2017 → 28/09/2026)', () => {
     assert.equal(t.advertencias.length, 0);
   });
 });
+
+describe('Mora: bordes de la capitalización', () => {
+  test('no capitaliza el mismo día del pago y cada tramo termina el día anterior al siguiente', () => {
+    const r = calcularMora({
+      capital: 1_000_000, fechaMora: '2026-10-20', fechaPago: '2027-10-20',
+      tasas: [{ desde: '2026-01-01', hasta: '2027-12-31', tna: 0.365 }],
+    });
+    assert.equal(r.periodos.length, 2);
+    assert.equal(r.periodos[0].hasta, '2027-04-19');
+    assert.equal(r.periodos[1].desde, '2027-04-20');
+    assert.equal(r.periodos[1].hasta, '2027-10-20');
+    const d1 = diasEntre('2026-10-20', '2027-04-20');
+    const d2 = diasEntre('2027-04-20', '2027-10-20') + 1;
+    cerca(r.total, 1_000_000 * (1 + 0.365 * d1 / 365) * (1 + 0.365 * d2 / 365));
+  });
+});

@@ -16,7 +16,7 @@
  * Sin dependencias. Funciones puras.
  */
 
-export const VERSION = '0.4.1';
+export const VERSION = '0.5.0';
 
 /** Vigencia de la Ley 27.348 (IBM promedio mensual actualizado por RIPTE). */
 export const REGIMEN_27348 = '2017-03-05';
@@ -469,7 +469,7 @@ export function calcularMora({
   const fechasCapitalizacion = [];
   for (let k = 1; mesesCapitalizacion > 0; k++) {
     const d = sumarMesesFecha(fechaMora, k * mesesCapitalizacion);
-    if (d >= fechaFin) break;
+    if (d >= fechaPago) break; // no se capitaliza el mismo día del pago
     fechasCapitalizacion.push(d);
   }
 
@@ -493,7 +493,7 @@ export function calcularMora({
 
     const capitaliza = fechasCapitalizacion.includes(b);
     if (capitaliza || b === fechaFin) {
-      periodos.push({ desde: inicio, hasta: b === fechaFin ? fechaPago : b, capitalBase: c, interes: pendiente, capitaliza });
+      periodos.push({ desde: inicio, hasta: capitaliza ? sumarDias(b, -1) : fechaPago, capitalBase: c, interes: pendiente, capitaliza });
       if (capitaliza) {
         c += pendiente;
         pendiente = 0;

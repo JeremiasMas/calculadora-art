@@ -5,7 +5,10 @@ Motor de cálculo de prestaciones dinerarias por incapacidad laboral permanente 
 Fuego ("Zamboni", 09/04/2024; "Quipildor", 18/09/2024; art. 37 Ley Prov. 110), tal como la
 aplica "V., M. E. c/ Provincia ART S.A." (Juzg. Trabajo N° 2 DJN, 16/06/2026).
 
-Estado: motor y datos. La interfaz web está pendiente.
+Calculadora en línea: **https://jeremiasmas.github.io/calculadora-art/**
+
+La página (`index.html` + `app.js`) corre entera en el navegador: carga el motor y las series
+de `data/`, calcula en vivo y no envía datos a ningún servidor.
 
 ## Qué calcula
 
@@ -23,8 +26,8 @@ Alcance: PMI desde el 05/03/2017. No cubre muerte, gran invalidez ni incapacidad
 ## Uso
 
 ```bash
-npm test                   # 49 tests (node:test, sin dependencias)
-node ejemplo.js           # caso de la sentencia de referencia, con datos sintéticos donde no informa
+npm test                   # 50 tests (node:test, sin dependencias)
+node ejemplo.js            # caso de la sentencia de referencia, con datos sintéticos donde no informa
 ```
 
 ```js
