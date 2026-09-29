@@ -94,7 +94,8 @@ details.bloque[open] summary { margin-bottom: 4px; }
 .num { color: var(--accent); margin-right: 6px; }
 .ayuda { color: var(--muted); font-size: 14px; margin: 0 0 14px; }
 
-.grid { display: grid; gap: 12px 14px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.grid { display: grid; gap: 12px 14px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); align-items: end; }
+.grid.pares { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 label.campo { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
 label.campo span.t { font-weight: 600; color: var(--ink); font-size: 14px; }
 input, select {
@@ -206,9 +207,10 @@ footer p { max-width: 80ch; }
 
     <section class="bloque">
       <h2><span class="num">2</span>Trabajador y fechas</h2>
+      <p class="ayuda">PMI: primera manifestación invalidante.</p>
       <div class="grid">
         <label class="campo"><span class="t">Fecha de nacimiento</span><input type="date" name="nacimiento"></label>
-        <label class="campo"><span class="t">Primera manifestación invalidante</span><input type="date" name="pmi"></label>
+        <label class="campo"><span class="t">Fecha de la PMI</span><input type="date" name="pmi"></label>
         <label class="campo"><span class="t">Fecha de liquidación</span><input type="date" name="liquidacion"></label>
       </div>
     </section>
@@ -238,14 +240,16 @@ footer p { max-width: 80ch; }
     <details class="bloque" id="bloque-hon">
       <summary><span><span class="num">5</span>Honorarios</span></summary>
       <p class="ayuda">Sobre el total a la fecha de liquidación, con el tope del art. 730 CCyCN. Valores iniciales de la sentencia de referencia.</p>
-      <div class="grid">
+      <div class="grid pares">
         <label class="campo"><span class="t">Letrado actora (%)</span><input name="hAct" inputmode="decimal" value="17"></label>
         <label class="campo"><span class="t">Recargo apoderado (%)</span><input name="hActRec" inputmode="decimal" value="40"></label>
         <label class="campo"><span class="t">Letrado demandada (%)</span><input name="hDem" inputmode="decimal" value="7"></label>
         <label class="campo"><span class="t">Recargo apoderado (%)</span><input name="hDemRec" inputmode="decimal" value="40"></label>
+      </div>
+      <div class="grid" style="margin-top:12px">
         <label class="campo"><span class="t">Perito ($)</span><input name="perito" inputmode="decimal" placeholder="0"></label>
-        <label class="campo"><span class="t">Regulación del perito</span><input type="date" name="peritoDesde"></label>
-        <label class="campo"><span class="t">Intereses del perito hasta</span><input type="date" name="peritoHasta"></label>
+        <label class="campo"><span class="t">Fecha de regulación</span><input type="date" name="peritoDesde"></label>
+        <label class="campo"><span class="t">Intereses hasta</span><input type="date" name="peritoHasta"></label>
       </div>
       <p class="ayuda" style="margin-top:8px">Intereses del perito: criterio "Macías" del STJ (tasa BTF de descuento de documentos, interés simple).</p>
     </details>
