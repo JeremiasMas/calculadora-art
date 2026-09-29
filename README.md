@@ -26,7 +26,7 @@ Alcance: PMI desde el 05/03/2017. No cubre muerte, gran invalidez ni incapacidad
 ## Uso
 
 ```bash
-npm test                   # 70 tests (node:test, sin dependencias)
+npm test                   # 71 tests (node:test, sin dependencias)
 node ejemplo.js            # caso ficticio
 ```
 
@@ -42,7 +42,7 @@ const r = liquidar(caso, { ripte, pisos, tasaActivaBNA, tasaBTF });
 | `ripte.json` | 01/2015–07/2026 | datos.gob.ar (serie 158.1_REPTE_0_0_5) |
 | `pisos.json` | 26/10/2012–28/02/2027 | Resoluciones y notas SRT; desde 03/2024, Boletín Oficial |
 | `tasa_activa_bna.json` | 01/2017–09/2026 + TNA vigente | Poder Judicial de Neuquén, contrastada con avisos BNA |
-| `tasa_btf.json` | Macías 01/2017–hoy; Cordero solo vigente | Calculadora del Colegio Público de Abogados de Ushuaia |
+| `tasa_btf.json` | Macías y Cordero, 01/2017–hoy | Calculadora del Colegio Público de Abogados de Ushuaia; desde 09/2026, PDF del BTF |
 
 ### Actualización automática
 
@@ -70,7 +70,7 @@ y marca como estimados los períodos posteriores a la última actualización.
 
 - Mora: tasa BNA como TNA (texto de la sentencia, por defecto) o como TEA (calculadora del
   Colegio, criterio STJ Expte. 2312/2010). Con capitalización semestral, la TEA compone dos veces.
-- Cordero: falta la serie histórica y la capitalización a la notificación de la demanda.
+- Cordero: falta modelar la capitalización a la notificación de la demanda (la serie de tasas está completa).
 
 ## Licencia
 

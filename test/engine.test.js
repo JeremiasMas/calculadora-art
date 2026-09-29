@@ -488,12 +488,13 @@ describe('Tasa BTF (Macías)', () => {
 
   test('antes de la primera vigencia: falla salvo que se pida completar', () => {
     const honorarios = calcularHonorarios({ base: 1e8, peritos: [{ nombre: 'Perito', monto: 1_021_220 }] });
-    // Cordero solo tiene dato desde el 21/09/2026
-    const sin = tramosTasaBTF(BTF, { desde: '2026-06-16', hasta: '2027-06-16', variante: 'cordero' });
-    assert.throws(() => calcularInteresesHonorarios(honorarios, { desde: '2026-06-16', hasta: '2027-06-16', tasas: sin.tramos }), ErrorCalculo);
-    const con = tramosTasaBTF(BTF, { desde: '2026-06-16', hasta: '2026-09-28', variante: 'cordero', completarConVigente: true });
-    const r = calcularInteresesHonorarios(honorarios, { desde: '2026-06-16', hasta: '2026-09-28', tasas: con.tramos });
-    cerca(r.peritos[0].interes, 1_021_220 * BTF.cordero[0].tasa * (diasEntre('2026-06-16', '2026-09-28') + 1) / 365);
+    // Las series empiezan el 01/01/2017
+    const hasta = BTF.cordero[1] ? diasAntes(BTF.cordero[1].desde) : '2017-06-26';
+    const sin = tramosTasaBTF(BTF, { desde: '2016-06-16', hasta, variante: 'cordero' });
+    assert.throws(() => calcularInteresesHonorarios(honorarios, { desde: '2016-06-16', hasta, tasas: sin.tramos }), ErrorCalculo);
+    const con = tramosTasaBTF(BTF, { desde: '2016-06-16', hasta, variante: 'cordero', completarConVigente: true });
+    const r = calcularInteresesHonorarios(honorarios, { desde: '2016-06-16', hasta, tasas: con.tramos });
+    cerca(r.peritos[0].interes, 1_021_220 * BTF.cordero[0].tasa * (diasEntre('2016-06-16', hasta) + 1) / 365);
     assert.ok(con.advertencias.some((a) => a.includes('estimación')));
   });
 });
@@ -615,5 +616,19 @@ describe('Tramos partidos en la fecha de actualización', () => {
 function diasDespues(f) {
   const d = new Date(f + 'T00:00:00Z');
   d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+describe('Serie Cordero completa (Colegio, 01/01/2017 → 29/09/2026)', () => {
+  test('$1 M durante todo el período → $6.335.493,97 de interés', () => {
+    const { tramos } = tramosTasaBTF(BTF, { desde: '2017-01-01', hasta: '2026-09-29', variante: 'cordero' });
+    const r = calcularMora({ capital: 1_000_000, fechaMora: '2017-01-01', fechaPago: '2026-09-29', tasas: tramos, mesesCapitalizacion: 0 });
+    assert.ok(Math.abs(r.interes - 6_335_493.97) < 0.05, String(r.interes));
+  });
+});
+
+function diasAntes(f) {
+  const d = new Date(f + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() - 1);
   return d.toISOString().slice(0, 10);
 }

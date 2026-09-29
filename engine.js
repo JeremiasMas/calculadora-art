@@ -693,7 +693,8 @@ export function tramosTasaActivaBNA(serie, hasta, { criterio = 'tna' } = {}) {
  *   - 'macias':  serie completa desde 2017 (46,80% desde el 09/02/2026). Hoy el BTF publica el
  *                producto como "Negociación de valores – Cheques físicos" (T.E.A.V.).
  *                $1 M del 01/01/2017 al 28/09/2026 = $6.995.110,96 de interés.
- *   - 'cordero': 42,32% (TNA vencida, tramo 121–180 días); solo el dato vigente.
+ *   - 'cordero': serie completa desde 2017 (TNA vencida; 42,32% desde el 09/02/2026).
+ *                $1 M del 01/01/2017 al 29/09/2026 = $6.335.493,97 de interés.
  * Cordero, además, capitaliza a la notificación de la demanda (art. 770 inc. b CCyC); esa
  * capitalización no se modela acá.
  *
