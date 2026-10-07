@@ -2,7 +2,7 @@
  "tasa": "BNA — tasa activa (cartera general, nominal anual vencida a 30 días): interés del mes, en %",
  "fuente": "Tabla 'Tasas Banco Nación', columna ACTIVA — ripte.agjusneuquen.gob.ar/tasas (consultada 28/09/2026). Validada contra el aviso BNA del Boletín Oficial del 01/06/2026 (TNA 25,5%–26,4% a fines de mayo; mayo = 2,17%).",
  "nota": "Historia mensual (interés de cada mes, en %) hasta septiembre de 2026, de la tabla del Poder Judicial de Neuquén, contrastada con avisos BNA y con la calculadora del Colegio. Desde la primera vigencia, la serie se arma con la TNA que publica el BNA, cargada por el actualizador diario del repositorio.",
- "actualizado": "2026-10-07",
+ "actualizado": "2026-10-08",
  "vigencias": [
   {
    "fuente": "bna.com.ar — Tasa Activa Cartera General Diversas",
@@ -28,6 +28,11 @@
    "fuente": "bna.com.ar",
    "desde": "2026-10-07",
    "tna": 0.2738
+  },
+  {
+   "fuente": "bna.com.ar",
+   "desde": "2026-10-08",
+   "tna": 0.2783
   }
  ],
  "mensual": {
